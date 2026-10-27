@@ -39,7 +39,7 @@ button{font-family:inherit;color:inherit}
 
 /* ---------- атмосфера регионов ---------- */
 #bg{position:fixed;inset:0;z-index:0;overflow:hidden;background:var(--ink)}
-#bg .rg{position:absolute;inset:0;opacity:0;transition:opacity 1.1s ease}
+#bg .rg{position:absolute;inset:0;opacity:0;transition:opacity .6s ease}
 #bg .rg.on{opacity:1}
 #bg .rg:not(.on) *{animation-play-state:paused}
 #bg .rg>svg{position:absolute;inset:0;width:100%;height:100%}
@@ -56,6 +56,9 @@ body.dim #bg .dim{opacity:1}
 .a-sway{animation:sway 5.5s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 0}
 .a-twk{animation:twinkle 3.2s ease-in-out infinite}
 .a-fly{animation:fly 26s linear infinite}
+.a-drift,.a-sway,.a-twk,.a-fly{animation:none!important}
+#fx{display:none}
+.tk-foil,.seal,.btn-gold::after{animation:none!important}
 
 /* ---------- шапка ---------- */
 main,header.hdr{position:relative;z-index:1}
@@ -129,7 +132,7 @@ a.btn{text-decoration:none}
 
 /* ---------- шаг 3: талон ---------- */
 .ticket{--r:15px;position:relative;width:min(100%,392px);margin:0 auto;color:var(--paper-ink);
-  filter:drop-shadow(0 26px 38px rgba(0,0,0,.55))}
+  }
 .tk-top,.tk-stub{background:var(--paper);position:relative}
 .tk-top{border-radius:16px 16px 0 0;
   -webkit-mask:radial-gradient(circle var(--r) at 0 100%,#0000 97%,#000) left/51% 100% no-repeat,radial-gradient(circle var(--r) at 100% 100%,#0000 97%,#000) right/51% 100% no-repeat;
@@ -268,16 +271,15 @@ h3.sec::before,h3.sec::after{content:"";height:1px;flex:1;background:var(--line)
         <linearGradient id="g0s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#040916"/><stop offset=".55" stop-color="#0C2A3E"/><stop offset="1" stop-color="#1E5560"/></linearGradient>
         <linearGradient id="g0a" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#58F0AE" stop-opacity="0"/><stop offset=".45" stop-color="#58F0AE" stop-opacity=".6"/><stop offset="1" stop-color="#8A78FF" stop-opacity="0"/></linearGradient>
         <linearGradient id="g0b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7BE7FF" stop-opacity="0"/><stop offset=".5" stop-color="#7BE7FF" stop-opacity=".4"/><stop offset="1" stop-color="#C77DFF" stop-opacity="0"/></linearGradient>
-        <filter id="b0" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="13"/></filter>
-      </defs>
+        </defs>
       <rect width="400" height="800" fill="url(#g0s)"/>
       <g fill="#fff">
         <circle class="a-twk" cx="40" cy="70" r="1.3"/><circle class="a-twk" cx="120" cy="40" r="1"/><circle class="a-twk" cx="210" cy="95" r="1.4" style="animation-delay:.8s"/>
         <circle class="a-twk" cx="300" cy="55" r="1.1" style="animation-delay:1.4s"/><circle class="a-twk" cx="360" cy="120" r="1.5" style="animation-delay:.4s"/>
         <circle class="a-twk" cx="75" cy="160" r="1" style="animation-delay:2s"/><circle class="a-twk" cx="330" cy="200" r="1" style="animation-delay:1.1s"/><circle class="a-twk" cx="170" cy="150" r="1.2"/>
       </g>
-      <g class="a-drift" filter="url(#b0)"><path d="M-30 260 C50 100 150 340 230 180 S370 110 440 240 L440 470 C350 340 290 500 200 380 S60 500 -30 400Z" fill="url(#g0a)"/></g>
-      <g class="a-drift" filter="url(#b0)" style="animation-delay:-6s;animation-duration:19s"><path d="M-30 330 C70 220 170 420 260 280 S380 230 440 320 L440 520 C340 430 270 560 190 460 S50 560 -30 470Z" fill="url(#g0b)"/></g>
+      <g class="a-drift"><path d="M-30 260 C50 100 150 340 230 180 S370 110 440 240 L440 470 C350 340 290 500 200 380 S60 500 -30 400Z" fill="url(#g0a)"/></g>
+      <g class="a-drift" style="animation-delay:-6s;animation-duration:19s"><path d="M-30 330 C70 220 170 420 260 280 S380 230 440 320 L440 520 C340 430 270 560 190 460 S50 560 -30 470Z" fill="url(#g0b)"/></g>
       <path d="M0 640 L60 560 L110 610 L180 520 L250 600 L310 540 L400 630 L400 800 L0 800Z" fill="#0A1B2B"/>
       <path d="M0 700 L90 640 L150 680 L240 610 L330 690 L400 650 L400 800 L0 800Z" fill="#071320"/>
       <g fill="#050D17">
@@ -417,7 +419,7 @@ h3.sec::before,h3.sec::after{content:"";height:1px;flex:1;background:var(--line)
     </svg>
   </div>
 
-  <canvas id="fx"></canvas>
+  <canvas id="fx" hidden></canvas>
   <div class="shade"></div>
   <div class="dim"></div>
 </div>
@@ -1127,6 +1129,7 @@ function fxFrame(ts){
   ctx.globalAlpha = 1;
 }
 function fxInit(){
+  return; /* частицы отключены ради скорости */
   FX.cv = $('fx'); if (!FX.cv) return;
   FX.ctx = FX.cv.getContext('2d'); fxResize();
   if (!REDUCED){ FX.on = true; FX.raf = requestAnimationFrame(fxFrame); }
