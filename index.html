@@ -716,7 +716,12 @@ var DEST = {
 
 var STEP_NAMES = ['Колесо судьбы','Регистрация','Посадочный талон','Маршрут'];
 var REDUCED = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-var state = { step:1, navBusy:false, sound:true, revealed:false, name:'' };
+var state = { step:1, navBusy:false, sound:true, revealed:false, name:'', cards:[false,false] };
+var SAVE_KEY = 'secretflight.v1';
+function saveProgress(){
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify({ step:state.step, name:state.name, cards:state.cards })); }catch(e){}
+}
+function clearProgress(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
 
 function $(id){ return document.getElementById(id); }
 function toRad(d){ return d*Math.PI/180; }
@@ -753,6 +758,7 @@ function goToStep(n){
     to.classList.add('in');
     window.scrollTo(0,0);
     try{ onEnterStep(n); }catch(err){}
+    saveProgress();
     state.navBusy = false;
     setTimeout(function(){ to.classList.remove('in'); }, REDUCED?30:1100);
   }, REDUCED?20:390);
@@ -1301,6 +1307,7 @@ function initScratch(){
     var dpr = Math.min(window.devicePixelRatio||1,2);
     if (!sc) sc = SCS[i] = { cv:cv, ctx:null, w:0, h:0, dpr:1, down:false, lx:0, ly:0, checkAt:0, done:false, bound:false, idx:i };
     sc.w = w; sc.h = h; sc.dpr = dpr;
+    if (state.cards[i] && !sc.done){ sc.done = true; cv.classList.add('gone'); applyRevealed(i); return; }
     cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr);
     sc.ctx = cv.getContext('2d',{ willReadFrequently:true });
     sc.ctx.setTransform(dpr,0,0,dpr,0,0); sc.ctx.globalCompositeOperation = 'source-over';
@@ -1352,9 +1359,25 @@ function checkScratch(sc){
   }
   if (total && cleared/total > .5) revealCard(sc);
 }
+function applyRevealed(idx){
+  if (idx===1){
+    $('destCode').textContent = DEST.code;
+    $('destSmall').textContent = DEST.city;
+    $('tkDest').classList.remove('q');
+  }
+  var n = (state.cards[0]?1:0)+(state.cards[1]?1:0);
+  if (n>=SCRATCH_DEFS.length){
+    state.revealed = true;
+    $('scratchHint').textContent = 'Пункт назначения открыт. Осталось заглянуть в программу поездки.';
+    $('toRouteBtn').disabled = false;
+  } else {
+    $('scratchHint').textContent = state.cards[0] ? 'Страна открыта. Осталась вторая карта: город.' : 'Город открыт. Осталась первая карта: страна.';
+  }
+}
 function revealCard(sc){
   if (sc.done) return;
   sc.done = true; sc.down = false;
+  state.cards[sc.idx] = true; saveProgress();
   sc.cv.classList.add('gone');
   if (sc.idx===1){
     $('destCode').textContent = DEST.code;
@@ -1522,7 +1545,7 @@ function tickCountdown(){
 }
 function startCountdown(){ if (cdTimer) clearInterval(cdTimer); tickCountdown(); cdTimer = setInterval(tickCountdown,1000); }
 
-function restartQuest(){ location.reload(); }
+function restartQuest(){ clearProgress(); location.reload(); }
 
 /* ============================ ЗАПУСК ============================ */
 var resizeT = 0;
@@ -1538,8 +1561,29 @@ function onResize(){
     }
   }, 90);
 }
+function restoreProgress(){
+  var s = null;
+  try{ s = JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); }catch(e){}
+  if (!s || !(s.step>=2 && s.step<=4)) return;
+  var n = s.step, name = (s.name||'').trim();
+  if (n>=3 && name.length<2) n = 2;
+  if (n===4 && !(s.cards && s.cards[0] && s.cards[1])) n = 3;
+  state.name = name;
+  state.cards = [!!(s.cards&&s.cards[0]), !!(s.cards&&s.cards[1])];
+  W.done = true; setRegion(TARGET);
+  var sb = $('spinBtn'); if (sb){ sb.disabled = true; sb.textContent = 'Направление выбрано'; }
+  if (name.length>=2){ try{ fillTicket(); }catch(e){} }
+  var from = $('step1'), to = $('step'+n);
+  if (!to) return;
+  from.hidden = true; from.classList.remove('in');
+  to.hidden = false; to.classList.add('in');
+  state.step = n; updateIndicator();
+  try{ onEnterStep(n); }catch(e){}
+  setTimeout(function(){ to.classList.remove('in'); }, 1100);
+}
 function init(){
   fxInit(); updateIndicator(); fillFlightStrip(); drawWheel();
+  restoreProgress();
   if (document.fonts && document.fonts.load){
     document.fonts.load('500 16px Jost').then(function(){ drawWheel(); });
     if (document.fonts.ready) document.fonts.ready.then(function(){ drawWheel(); if (state.step===3 && !state.revealed) initScratch(); });
