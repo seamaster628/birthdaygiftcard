@@ -250,6 +250,8 @@ h3.sec::before,h3.sec::after{content:"";height:1px;flex:1;background:var(--line)
   .legs li::before{left:0;top:6px}
   .legs li:not(:last-child)::after{left:18px;right:-2px;top:12px;bottom:auto;border-left:0;border-top:1.5px dashed var(--line)}
 }
+h3.sec.sec-top{margin-top:8px}
+.diff{margin:20px 0 0;text-align:center;font-family:var(--f-display);font-weight:500;font-size:clamp(1.55rem,7.2vw,2.5rem);line-height:1.15;color:var(--gold-hi)}
 .clocks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-width:34rem;margin:0 auto}
 .clk{border:1px solid var(--line);background:rgba(10,14,22,.8);padding:14px 6px 12px;text-align:center}
 .clk small{display:block;font-family:var(--f-mono);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--mute)}
@@ -558,6 +560,22 @@ h3.sec::before,h3.sec::after{content:"";height:1px;flex:1;background:var(--line)
       <p class="lede">5–14 ноября 2026</p>
     </div>
 
+    <h3 class="sec sec-top"><span>Сейчас</span></h3>
+    <div class="clocks" role="group" aria-label="Текущее время в Вене и Шанхае">
+      <div class="clk"><small>Вена · дома</small><b id="clkV">--:--:--</b><span id="clkVd"></span></div>
+      <div class="clk"><small>Шанхай</small><b id="clkS">--:--:--</b><span id="clkSd"></span></div>
+    </div>
+    <p class="diff" id="clkDiff"></p>
+
+    <h3 class="sec"><span id="cdSec">До вылета</span></h3>
+    <div class="cd" role="timer" aria-label="Обратный отсчёт до вылета">
+      <div><b id="cdD">00</b><small>дней</small></div>
+      <div><b id="cdH">00</b><small>часов</small></div>
+      <div><b id="cdM">00</b><small>минут</small></div>
+      <div><b id="cdS">00</b><small>секунд</small></div>
+    </div>
+    <p class="when" id="whenTxt"></p>
+
     <h3 class="sec"><span>Дорога</span></h3>
     <ol class="legs">
       <li><span class="lg-d">5 ноября</span><b class="lg-t" id="legDep">—</b><span class="lg-c">Вена <i>VIE</i></span><span class="lg-n" id="legFlight">Вылет</span></li>
@@ -644,21 +662,6 @@ h3.sec::before,h3.sec::after{content:"";height:1px;flex:1;background:var(--line)
     </div>
     <p class="home">14 ноября: обратная дорога домой.</p>
 
-    <h3 class="sec"><span>Сейчас</span></h3>
-    <div class="clocks" role="group" aria-label="Текущее время в Вене и Шанхае">
-      <div class="clk"><small>Вена · дома</small><b id="clkV">--:--:--</b><span id="clkVd"></span></div>
-      <div class="clk"><small>Шанхай</small><b id="clkS">--:--:--</b><span id="clkSd"></span></div>
-    </div>
-    <p class="when" id="clkDiff"></p>
-
-    <h3 class="sec"><span id="cdSec">До вылета</span></h3>
-    <div class="cd" role="timer" aria-label="Обратный отсчёт до вылета">
-      <div><b id="cdD">00</b><small>дней</small></div>
-      <div><b id="cdH">00</b><small>часов</small></div>
-      <div><b id="cdM">00</b><small>минут</small></div>
-      <div><b id="cdS">00</b><small>секунд</small></div>
-    </div>
-    <p class="when" id="whenTxt"></p>
 
     <div class="cal">
       <button id="icsBtn" class="btn btn-gold full" type="button" onclick="downloadICS()">Добавить в календарь (.ics)</button>
