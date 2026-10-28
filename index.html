@@ -250,6 +250,11 @@ h3.sec::before,h3.sec::after{content:"";height:1px;flex:1;background:var(--line)
   .legs li::before{left:0;top:6px}
   .legs li:not(:last-child)::after{left:18px;right:-2px;top:12px;bottom:auto;border-left:0;border-top:1.5px dashed var(--line)}
 }
+.clocks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-width:34rem;margin:0 auto}
+.clk{border:1px solid var(--line);background:rgba(10,14,22,.8);padding:14px 6px 12px;text-align:center}
+.clk small{display:block;font-family:var(--f-mono);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--mute)}
+.clk b{display:block;margin-top:8px;font-family:var(--f-display);font-weight:500;font-size:clamp(1.5rem,7vw,2.3rem);line-height:1;color:var(--gold-hi);font-variant-numeric:tabular-nums}
+.clk span{display:block;margin-top:8px;font-size:12px;color:var(--mute)}
 .home{margin:20px 0 0;text-align:center;font-family:var(--f-mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--mute)}
 @media (prefers-reduced-motion:reduce){.btn-gold::after,.tk-foil,.seal{animation:none}}
 
@@ -550,15 +555,8 @@ h3.sec::before,h3.sec::after{content:"";height:1px;flex:1;background:var(--line)
   <section class="panel wide" id="step4" data-step="4" hidden aria-labelledby="h-step4">
     <div class="head">
       <h2 id="h-step4">Секретное <em>путешествие</em></h2>
-      <p class="lede">5–14 ноября 2026. До вылета осталось</p>
+      <p class="lede">5–14 ноября 2026</p>
     </div>
-    <div class="cd" role="timer" aria-label="Обратный отсчёт до вылета">
-      <div><b id="cdD">00</b><small>дней</small></div>
-      <div><b id="cdH">00</b><small>часов</small></div>
-      <div><b id="cdM">00</b><small>минут</small></div>
-      <div><b id="cdS">00</b><small>секунд</small></div>
-    </div>
-    <p class="when" id="whenTxt"></p>
 
     <h3 class="sec"><span>Дорога</span></h3>
     <ol class="legs">
@@ -645,6 +643,22 @@ h3.sec::before,h3.sec::after{content:"";height:1px;flex:1;background:var(--line)
       </article>
     </div>
     <p class="home">14 ноября: обратная дорога домой.</p>
+
+    <h3 class="sec"><span>Сейчас</span></h3>
+    <div class="clocks" role="group" aria-label="Текущее время в Вене и Шанхае">
+      <div class="clk"><small>Вена · дома</small><b id="clkV">--:--:--</b><span id="clkVd"></span></div>
+      <div class="clk"><small>Шанхай</small><b id="clkS">--:--:--</b><span id="clkSd"></span></div>
+    </div>
+    <p class="when" id="clkDiff"></p>
+
+    <h3 class="sec"><span id="cdSec">До вылета</span></h3>
+    <div class="cd" role="timer" aria-label="Обратный отсчёт до вылета">
+      <div><b id="cdD">00</b><small>дней</small></div>
+      <div><b id="cdH">00</b><small>часов</small></div>
+      <div><b id="cdM">00</b><small>минут</small></div>
+      <div><b id="cdS">00</b><small>секунд</small></div>
+    </div>
+    <p class="when" id="whenTxt"></p>
 
     <div class="cal">
       <button id="icsBtn" class="btn btn-gold full" type="button" onclick="downloadICS()">Добавить в календарь (.ics)</button>
@@ -1449,12 +1463,30 @@ function fillFlightStrip(){
 }
 
 var cdTimer = 0;
+var CLKF = {};
+function clkParts(tz, now){
+  var f = CLKF[tz] || (CLKF[tz] = new Intl.DateTimeFormat('ru-RU',{timeZone:tz,hourCycle:'h23',year:'numeric',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}));
+  var o = {}; f.formatToParts(now).forEach(function(p){ o[p.type] = p.value; }); return o;
+}
+function tickClocks(){
+  var now = new Date(), res = {}, DF = CLKF.date || (CLKF.date = {});
+  [['clkV','clkVd','Europe/Vienna'],['clkS','clkSd','Asia/Shanghai']].forEach(function(z){
+    var o = clkParts(z[2], now), h = Number(o.hour);
+    $(z[0]).textContent = o.hour+':'+o.minute+':'+o.second;
+    var f = DF[z[2]] || (DF[z[2]] = new Intl.DateTimeFormat('ru-RU',{timeZone:z[2],weekday:'short',day:'numeric',month:'long'}));
+    $(z[1]).textContent = f.format(now)+' · '+(h>=6&&h<12?'утро':h>=12&&h<18?'день':h>=18&&h<23?'вечер':'ночь');
+    res[z[2]] = Date.UTC(o.year,o.month-1,o.day,h,o.minute,o.second);
+  });
+  var dh = Math.round((res['Asia/Shanghai']-res['Europe/Vienna'])/3600000);
+  $('clkDiff').textContent = 'Шанхай впереди Вены на '+dh+' ч';
+}
 function tickCountdown(){
+  try{ tickClocks(); }catch(e){}
   var diff = new Date(FLIGHT_ISO).getTime()-Date.now(); if (diff<0) diff = 0;
   var s = Math.floor(diff/1000), d = Math.floor(s/86400); s %= 86400;
   var h = Math.floor(s/3600); s %= 3600; var m = Math.floor(s/60); s %= 60;
   $('cdD').textContent = pad2(d); $('cdH').textContent = pad2(h); $('cdM').textContent = pad2(m); $('cdS').textContent = pad2(s);
-  if (diff===0){ var l = document.querySelector('#step4 .lede'); if (l) l.textContent = 'Время пришло. Приятного полёта!'; }
+  if (diff===0){ var l = $('cdSec'); if (l) l.textContent = 'Время пришло. Приятного полёта!'; }
 }
 function startCountdown(){ if (cdTimer) clearInterval(cdTimer); tickCountdown(); cdTimer = setInterval(tickCountdown,1000); }
 
